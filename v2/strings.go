@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"unicode"
+	"unicode/utf16"
 	"unicode/utf8"
 )
 
@@ -307,4 +308,38 @@ func isEmoji(r rune) bool {
 // trimRightSpace trims space but only at the right side of a string
 func trimRightSpace(str string) string {
 	return strings.TrimRightFunc(str, unicode.IsSpace)
+}
+
+// utf16ToUTF8 converts UTF-16 encoded data to UTF-8.
+func utf16ToUTF8(data []byte) ([]byte, error) {
+	// Check for byte order mark (BOM) to determine endianness.
+	// This is a simplified approach; more robust handling may be required.
+	bigEndian := false
+	if len(data) >= 2 {
+		bom := uint16(data[0])<<8 | uint16(data[1])
+		if bom == 0xFEFF {
+			bigEndian = true
+			data = data[2:] // Remove BOM
+		} else if bom == 0xFFFE {
+			data = data[2:] // Remove BOM
+		}
+	}
+
+	// Convert to uint16 slice.
+	u16s := make([]uint16, 0, len(data)/2)
+	for i := 0; i+1 < len(data); i += 2 {
+		if bigEndian {
+			u16s = append(u16s, uint16(data[i])<<8|uint16(data[i+1]))
+		} else {
+			u16s = append(u16s, uint16(data[i+1])<<8|uint16(data[i]))
+		}
+	}
+
+	// Decode to UTF-8.
+	runes := utf16.Decode(u16s)
+	buf := make([]byte, 0, len(runes)*utf8.UTFMax)
+	for _, r := range runes {
+		buf = append(buf, string(r)...)
+	}
+	return buf, nil
 }

@@ -15,7 +15,7 @@ require (
 	github.com/sajari/fuzzy v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/xyproto/autoimport v1.5.2
-	github.com/xyproto/binary v1.3.2
+	github.com/xyproto/binary v1.3.3
 	github.com/xyproto/carveimg v1.4.6
 	github.com/xyproto/clip v1.0.0
 	github.com/xyproto/digraph v1.2.0

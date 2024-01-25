@@ -79,8 +79,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/xyproto/autoimport v1.5.2 h1:TrQRec20mD6NG1unF+vCkMkUM4Tm5Z68y6D/zAbXBwQ=
 github.com/xyproto/autoimport v1.5.2/go.mod h1:L8xvJBA397aNDDsu/BcXI9GJjgT4FsUoZeXj9Vlu+Ow=
 github.com/xyproto/benchmarked v0.3.0/go.mod h1:4H4a1k1EsFmliut59gNc8RO2N2IIhl74XqfW0AVjWbk=
-github.com/xyproto/binary v1.3.2 h1:AGJtfAVXKGiBgV4xKfZiiS8O4Sl6qCOha23+4ecRiNA=
-github.com/xyproto/binary v1.3.2/go.mod h1:0bRi3JImoPWOFfM7yPYzNVyLZXYGQTBwdNRPs4m3+qQ=
+github.com/xyproto/binary v1.3.3 h1:pc33rqTXguiedvsH5nhx4P1Ph7iHb7awqhDscTOTHv4=
+github.com/xyproto/binary v1.3.3/go.mod h1:0bRi3JImoPWOFfM7yPYzNVyLZXYGQTBwdNRPs4m3+qQ=
 github.com/xyproto/burnfont v1.2.3 h1:4MHSRrmVqZT8i1XmDrEG/5qcg2G1bSEDlOoO3BCl11c=
 github.com/xyproto/burnfont v1.2.3/go.mod h1:NlQwt/VHpxq17k8CkHcWvWTGhBim818XB4onh+TeZRo=
 github.com/xyproto/burnpal v1.0.0 h1:cwiMfJdQKRuTWbg6XjCjBNd7c0TLCpfbxLW5bQNzU+c=

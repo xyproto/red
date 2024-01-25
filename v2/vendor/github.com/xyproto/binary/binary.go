@@ -2,6 +2,7 @@ package binary
 
 import (
 	"encoding/binary"
+	"io"
 	"os"
 	"unicode/utf8"
 )
@@ -58,8 +59,9 @@ func isValidUTF16(data []byte) (valid bool) {
 	return true
 }
 
-// probablyBinaryData uses enhanced heuristics to guess whether data is binary or text.
-func probablyBinaryData(b []byte) bool {
+// probablyBinaryDataAndUTF16 uses enhanced heuristics to guess whether data is binary or text.
+// Also returns a bool for if it's likely to be UTF-16
+func probablyBinaryDataAndUTF16(b []byte) (bool, bool) {
 	var zeroCount, controlCharCount, continuousNullCount int
 	maxContinuousNull := 0
 	distinctBytes := make(map[byte]struct{})
@@ -82,56 +84,68 @@ func probablyBinaryData(b []byte) bool {
 		}
 	}
 
+	isUtf16 := isValidUTF16(b)
+
 	// High proportion of null bytes or long continuous null byte sequences suggest binary
 	if zeroCount > len(b)/2 || maxContinuousNull > 4 {
-		return true
+		return true, isUtf16
 	}
 
 	// Valid UTF-8 or UTF-16 data suggests text
-	if utf8.Valid(b) || isValidUTF16(b) {
-		return false
+	if utf8.Valid(b) || isUtf16 {
+		return false, isUtf16
 	}
 
 	// High count of control characters suggests binary
 	if controlCharCount > len(b)/10 {
-		return true
+		return true, isUtf16
 	}
 
 	// Little variety in byte values might suggest binary
-	return len(distinctBytes) < len(b)/2
+	return len(distinctBytes) < len(b)/2, isUtf16
 }
 
-// File tries to determine if the given filename is a binary file by reading the first, last
+// probablyBinaryData uses enhanced heuristics to guess whether data is binary or text.
+func probablyBinaryData(b []byte) bool {
+	probablyBinary, _ := probablyBinaryDataAndUTF16(b)
+	return probablyBinary
+}
+
+// FileAndUTF16 tries to determine if the given filename is a binary file by reading the first, last
 // and middle 24 bytes, then using the probablyBinaryData function on each of them in turn.
-func File(filename string) (bool, error) {
+// Also return true if it is probably UTF-16.
+func FileAndUTF16(filename string) (bool, bool, error) {
+	isUtf16 := false
 	file, err := os.Open(filename)
 	if err != nil {
-		return false, err
+		return false, isUtf16, err
 	}
 	defer file.Close()
 
 	// Go to the end of the file, minus 24 bytes
-	fileLength, err := file.Seek(-24, os.SEEK_END)
+	fileLength, err := file.Seek(-24, io.SeekEnd)
 	if err != nil || fileLength < 24 {
 
 		// Go to the start of the file, ignore errors
-		_, err = file.Seek(0, os.SEEK_SET)
+		file.Seek(0, io.SeekStart)
 
 		// Read up to 24 bytes
 		fileBytes := make([]byte, 24)
 		n, err := file.Read(fileBytes)
 		if err != nil {
 			// Could not read the file
-			return false, err
+			return false, isUtf16, err
 		} else if n == 0 {
 			// The file is too short, decide it's a text file
-			return false, nil
+			return false, isUtf16, nil
 		}
 		// Shorten the byte slice in case less than 24 bytes were read
 		fileBytes = fileBytes[:n]
 
 		// Check if it's likely to be a binary file, based on the few available bytes
-		return probablyBinaryData(fileBytes), nil
+		var probably bool
+		probably, isUtf16 = probablyBinaryDataAndUTF16(fileBytes)
+		return probably, isUtf16, nil
 	}
 
 	last24 := make([]byte, 24)
@@ -139,11 +153,15 @@ func File(filename string) (bool, error) {
 	// Read 24 bytes
 	last24count, err := file.Read(last24)
 	if err != nil {
-		return false, err
+		return false, isUtf16, err
 	}
 
-	if last24count > 0 && probablyBinaryData(last24) {
-		return true, nil
+	if last24count > 0 {
+		var probably bool
+		probably, isUtf16 = probablyBinaryDataAndUTF16(last24)
+		if probably {
+			return true, isUtf16, nil
+		}
 	}
 
 	if fileLength-24 >= 24 {
@@ -151,19 +169,23 @@ func File(filename string) (bool, error) {
 		first24count := 0
 
 		// Go to the start of the file
-		if _, err := file.Seek(0, os.SEEK_SET); err != nil {
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
 			// Could not go to the start of the file (!)
-			return false, err
+			return false, isUtf16, err
 		}
 
 		// Read 24 bytes
 		first24count, err = file.Read(first24)
 		if err != nil {
-			return false, err
+			return false, isUtf16, err
 		}
 
-		if first24count > 0 && probablyBinaryData(first24) {
-			return true, nil
+		if first24count > 0 {
+			var probably bool
+			probably, isUtf16 = probablyBinaryDataAndUTF16(first24)
+			if probably {
+				return true, isUtf16, nil
+			}
 		}
 	}
 
@@ -175,19 +197,60 @@ func File(filename string) (bool, error) {
 		middlePos := fileLength / 2
 
 		// Go to the middle of the file, relative to the start. Ignore errors.
-		_, _ = file.Seek(middlePos, os.SEEK_SET)
+		file.Seek(middlePos, io.SeekStart)
 
 		// Read 24 bytes from where MIGHT be the middle of the file
 		middle24count, err = file.Read(middle24)
 		if err != nil {
-			return false, err
+			return false, isUtf16, err
 		}
 
-		return middle24count > 0 && probablyBinaryData(middle24), nil
+		if middle24count > 0 {
+			var probably bool
+			probably, isUtf16 = probablyBinaryDataAndUTF16(middle24)
+			if probably {
+				return true, isUtf16, nil
+			}
+		}
 	}
 
 	// If it was a binary file, it should have been catched by one of the returns above
-	return false, nil
+	return false, isUtf16, nil
+}
+
+// File tries to determine if the given filename is a binary file by reading the first, last
+// and middle 24 bytes, then using the probablyBinaryData function on each of them in turn.
+func File(filename string) (bool, error) {
+	isBinary, _, err := FileAndUTF16(filename)
+	return isBinary, err
+}
+
+// DataAndUTF16 tries to determine if the given data is binary by examining the first, last
+// and middle 24 bytes, then using the probablyBinaryData function on each of them in turn.
+// Also returns a bool if the data appears to be UTF-16.
+func DataAndUTF16(data []byte) (bool, bool) {
+	l := len(data)
+	switch {
+	case l == 0:
+		return false, false
+	case l <= 24:
+		return probablyBinaryDataAndUTF16(data)
+	case l <= 48:
+		isBinary1, isUtf16_1 := probablyBinaryDataAndUTF16(data[:24])
+		isBinary2, isUtf16_2 := probablyBinaryDataAndUTF16(data[24:])
+		return isBinary1 || isBinary2, isUtf16_1 || isUtf16_2
+	case l <= 72:
+		isBinary1, isUtf16_1 := probablyBinaryDataAndUTF16(data[:24])
+		isBinary2, isUtf16_2 := probablyBinaryDataAndUTF16(data[24:48])
+		isBinary3, isUtf16_3 := probablyBinaryDataAndUTF16(data[48:])
+		return isBinary1 || isBinary2 || isBinary3, isUtf16_1 || isUtf16_2 || isUtf16_3
+	default: // l > 72
+		middle := l / 2
+		isBinary1, isUtf16_1 := probablyBinaryDataAndUTF16(data[:24])
+		isBinary2, isUtf16_2 := probablyBinaryDataAndUTF16(data[middle : middle+24])
+		isBinary3, isUtf16_3 := probablyBinaryDataAndUTF16(data[l-24:])
+		return isBinary1 || isBinary2 || isBinary3, isUtf16_1 || isUtf16_2 || isUtf16_3
+	}
 }
 
 // Data tries to determine if the given data is binary by examining the first, last

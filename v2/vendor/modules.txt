@@ -72,7 +72,7 @@ github.com/spf13/pflag
 # github.com/xyproto/autoimport v1.5.2
 ## explicit; go 1.19
 github.com/xyproto/autoimport
-# github.com/xyproto/binary v1.3.2
+# github.com/xyproto/binary v1.3.3
 ## explicit; go 1.18
 github.com/xyproto/binary
 # github.com/xyproto/burnfont v1.2.3

@@ -23,7 +23,15 @@ func (e *Editor) ReadFileAndProcessLines(filename string) error {
 			return err
 		}
 	}
-	e.binaryFile = binary.Data(data)
+
+	var isUTF16 bool
+	e.binaryFile, isUTF16 = binary.DataAndUTF16(data)
+
+	if isUTF16 {
+		if newData, err := utf16ToUTF8(data); err == nil { // success
+			data = newData
+		}
+	}
 
 	var (
 		reader           = bufio.NewReader(bytes.NewReader(data))
@@ -102,7 +110,16 @@ func (e *Editor) LoadBytes(data []byte) {
 	e.Clear()
 	e.lines = make(map[int][]rune, lineCount)
 
-	e.binaryFile = binary.Data(data)
+	var (
+		isUTF16 bool
+	)
+	e.binaryFile, isUTF16 = binary.DataAndUTF16(data)
+
+	if isUTF16 {
+		if newData, err := utf16ToUTF8(data); err == nil { // success
+			data = newData
+		}
+	}
 
 	var (
 		// Split the bytes into lines
