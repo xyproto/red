@@ -48,6 +48,9 @@ o: $(SRCFILES)
 trace: clean $(SRCFILES)
 	cd v2 && $(GOBUILD) $(GOFLAGS) $(BUILDFLAGS) -tags=trace -o ../o
 
+nopdf: clean $(SRCFILES)
+	cd v2 && $(GOBUILD) $(GOFLAGS) $(BUILDFLAGS) -tags=nopdf -o ../o
+
 pgo: v2/default.pgo
 
 v2/default.pgo: clean $(SRCFILES)

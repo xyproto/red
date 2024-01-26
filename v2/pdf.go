@@ -1,3 +1,5 @@
+//go:build !nopdf
+
 package main
 
 import (
