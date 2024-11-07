@@ -3,6 +3,7 @@ module github.com/xyproto/orbiton/v2
 go 1.23.2
 
 require (
+	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/cyrus-and/gdb v0.0.0-20230321224603-9424cb2f2a86
 	github.com/felixge/fgtrace v0.2.0
 	github.com/fsnotify/fsnotify v1.8.0
@@ -30,6 +31,7 @@ require (
 	github.com/xyproto/usermodel v1.2.2
 	github.com/xyproto/vt100 v1.16.11
 	github.com/xyproto/wordwrap v1.0.1
+	golang.org/x/crypto v0.28.0
 	golang.org/x/image v0.21.0
 )
 
@@ -55,4 +57,5 @@ require (
 	github.com/xyproto/env v1.9.1 // indirect
 	github.com/xyproto/palgen v1.6.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/term v0.25.0 // indirect
 )
